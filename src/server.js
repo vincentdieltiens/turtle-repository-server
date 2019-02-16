@@ -28,10 +28,10 @@ router.get('/', function (req, res) {
 });
 
 router.post('/signin', function (req, res) {
-	console.log('req.body.username : ', req.body.username)
-	console.log('req.body.username : ', sha1(req.body.password))
+	let hashedPassword = hashPasswordLikeTransmission(req.body.password, transmissionPassword);
+
 	if (transmissionUsername == req.body.username &&
-		transmissionPassword == req.body.transmissionPassword) {
+		transmissionPassword == hashedPassword) {
 		res.json({ message: 'Ok' });
 	} else {
 		res.json({ error: 403, message: 'Authentication failed' });
@@ -160,6 +160,32 @@ router.put('/directories', function(req, res) {
 	res.json(directory);
 });
 
+/**
+ * Hash the given password using sallted sha1 (by extracting the salt from the hashed password of transmission config)
+ * @param {string} password the password to hash
+ * @param {string} transmissionPassword the hashed transmission password
+ * @return the ssha1 password
+ */
+function hashPasswordLikeTransmission(password, transmissionPassword) {
+	let salt = transmissionPassword.substr(-8);
+	return '{'+saltedSha1Password(password, salt);
+}
+
+/**
+ * hash the password using sha1 and a given salt
+ * @param {string} password the password to hash
+ * @param {string} salt the salt to use
+ * @return the hashed password
+ */
+function saltedSha1Password(password, salt) {
+	return sha1(password + salt) + salt;
+}
+
+/**
+ * Tells if a given path is inside the allowed path (= is an allowed path of one of his descendant)
+ * @param {string} requestedPath 
+ * @return true if the path is allowed, false otherwise
+ */
 function isPathAllowed(requestedPath) {
 	let paths = config['allowed-paths'];
 	let computedPath = '';
