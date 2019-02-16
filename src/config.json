@@ -1,0 +1,11 @@
+{
+	"allowed-paths": [
+	  "/usr/src/app"
+	],
+	"port": 9092,
+	"bind-address": "0.0.0.0",
+	"transmission-daemon-conf-path": "/config/settings.json",
+	"whitelist": [
+	  "192.168.*.*"
+	]
+}
