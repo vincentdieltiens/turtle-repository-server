@@ -4,6 +4,7 @@ const bodyParser = require('body-parser');
 const fs = require('fs');
 const path = require('path');
 const sha1 = require('sha1');
+const jwt = require('jsonwebtoken');
 
 const app = express();
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -23,6 +24,34 @@ const transmissionPassword = transmissionConfig['rpc-password'];
 
 const router = express.Router();
 
+router.use((req, res, next) => {
+	if (req.url != '/signin') {
+		let authHeader = req.headers['authorization'];
+		//console.log(req.headers);
+		if (authHeader !== null && authHeader !== undefined) {
+			let token = authHeader.split(' ')[1];
+			let ok = verifyToken(token, config['public-key']);
+			if (!ok) {
+				deny(res, 'Token is invalid');
+			}
+		} else {
+			deny(res, 'Authentication required');
+			return;
+		}
+	}
+	next();
+	
+
+	function deny(res, message) {
+		res.status(401).json({
+			error: {
+				code: 401,
+				message: message
+			}
+		});
+	}
+})
+
 router.get('/', function (req, res) {
 	res.json({ message: 'nothing here' });
 });
@@ -32,7 +61,7 @@ router.post('/signin', function (req, res) {
 
 	if (transmissionUsername == req.body.username &&
 		transmissionPassword == hashedPassword) {
-		res.json({ message: 'Ok' });
+		res.json({ token: generateToken(transmissionUsername, config['private-key']) });
 	} else {
 		res.json({ error: 403, message: 'Authentication failed' });
 	}
@@ -159,6 +188,22 @@ router.put('/directories', function(req, res) {
 
 	res.json(directory);
 });
+
+function generateToken(username, privateKeyFile) {
+	let privateKey = fs.readFileSync(privateKeyFile);
+	return jwt.sign({ username: 'username' }, privateKey, { algorithm: 'RS256' });
+}
+
+function verifyToken(token, publicKeyFile) {
+	let privateKey = fs.readFileSync(publicKeyFile);
+	try {
+		jwt.verify(token, privateKey, { algorithm: 'RS256'});
+		return true;
+	} catch(err) {
+		console.log(err)
+		return false;
+	}
+}
 
 /**
  * Hash the given password using sallted sha1 (by extracting the salt from the hashed password of transmission config)

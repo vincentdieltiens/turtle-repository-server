@@ -15,16 +15,31 @@ All configuration is in the file `config.json` :
   "transmission-daemon-conf-path": "/var/lib/transmission-daemon/info/settings.json",
   "whitelist": [
     "192.168.*.*"
-  ]
+  ],
+  "private-key": "/keys/private_key.pem",
+  "public-key": "/keys/public_key.pem"
 }
 ```
 
 ## Authentication
 
-It uses JSWT (JSon Web Token) for authentication.
-Using the `/signin` route, the client send a username and a password and the API return a token that should be passed to the next API calls through HTTP headers
+It uses JSWT (JSON Web Token) for authentication.
+Using the `/signin` route, the client send the transmission username and assword and the API return a token that should be passed to the next API calls through HTTP header `Authorization`.
 
-The username
+For this, your need to generate a key pair (source: https://gist.github.com/ygotthilf/baa58da5c3dd1f69fae9) :
+
+First generate a private key (without passphrase)
+```
+ssh-keygen -t rsa -b 4096 -m PEM -f /keys/private_keys.pem
+```
+
+then generate the public key from the private key :
+
+```
+openssl rsa -in /keys/private_keys.pem -pubout -outform PEM -out /keys/public_keys.pem
+```
+
+
 
 ## Directory Routes
 
@@ -117,12 +132,3 @@ The deleted directory :
 	"files": []
 }
 ```
-
-## File Routes
-
-### POST `/files/move`
-
-Parameter name | Type | Optionnal     | Description
----------------|------|---------------|-------------
-`from-path`     | `string` | false         | 
-`to-path`     | `string` | false         | 
